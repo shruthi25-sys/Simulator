@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI-Powered Sustainable City Simulation</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #000;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    .button-container, .actions-panel, .results-panel {
+      position: fixed;
+      z-index: 999;
+    }
+
+    .button-container {
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+    }
+
+    button {
+      padding: 10px 15px;
+      font-size: 14px;
+      font-weight: bold;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      opacity: 0.85;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      opacity: 1;
+      background-color: #45a049;
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    .actions-panel {
+      top: 80px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 15px;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .results-panel {
+      bottom: 20px;
+      left: 20px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 15px;
+      border-radius: 8px;
+      width: 350px;
+    }
+
+    .results-panel h4 {
+      margin: 0 0 10px 0;
+      font-size: 16px;
+      color: #00FFAA;
+    }
+
+    .results-panel p {
+      margin: 0 0 10px 0;
+      font-size: 14px;
+      color: #ddd;
+    }
+
+    #chart-container {
+      width: 100%;
+      height: 200px;
+    }
+
+    /* Modal styling */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.9);
+    }
+
+    .modal-content {
+      background-color: #333;
+      margin: 5% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+      max-width: 800px;
+      border-radius: 10px;
+    }
+
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .close:hover,
+    .close:focus {
+      color: white;
+    }
+
+    /* Side Buttons Styling */
+    .side-buttons {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 999;
+    }
+
+    .side-buttons button {
+      padding: 10px 15px;
+      font-size: 14px;
+      font-weight: bold;
+      background-color:#00FFAA
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      opacity: 0.85;
+      transition: all 0.3s ease;
+    }
+
+    .side-buttons button:hover {
+      opacity: 1;
+      background-color: #1976D2;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Scene Switching Buttons -->
+  <div class="button-container">
+    <button onclick="changeScene('https://skybox.blockadelabs.com/e/7bd251218b9200da04b112a8c66626cd')">City - Present</button>
+    <button onclick="changeScene('https://skybox.blockadelabs.com/e/c6391b597b7a3c37c683358af6f3ef6d')">City - Future</button>
+    <button onclick="changeScene('https://sketchfab.com/models/7544e741a6814715a659724d994ecc58/embed', true)">3D Model</button>
+    <button onclick="showLineGraph()">Show Energy Graph</button>
+  </div>
+
+  <!-- Sustainability Actions -->
+  <div class="actions-panel">
+    <h4>Sustainability Actions</h4>
+    <button onclick="addSolarPanels()">Add Solar Panels</button>
+    <button onclick="plantTrees()">Plant More Trees</button>
+    <button onclick="optimizeWaste()">Optimize Waste Mgmt</button>
+    <button onclick="addturbine()">Install Wind Turbine</button>
+    <button onclick="simulateFuture()">Simulate 20 Years Ahead</button>
+  </div>
+  
+
+  <!-- Results and Data Visualization -->
+  <div class="results-panel">
+    <h4>Simulation Feedback</h4>
+    <p id="result-text">Select an action to see impact!</p>
+    <div id="chart-container">
+      <canvas id="impactChart"></canvas>
+    </div>
+  </div>
+
+
+<!-- Add this modal below your graphModal -->
+<div id="statusModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeStatusModal()">&times;</span>
+    <h2>Installation Progress</h2>
+    <canvas id="installationsGraph"></canvas>
+  </div>
+</div>
+
+
+  <!-- VR & 3D Scene -->
+  <iframe id="sceneFrame" src="https://skybox.blockadelabs.com/e/7bd251218b9200da04b112a8c66626cd" allow="fullscreen"></iframe>
+
+  <!-- Modal for Line Graph -->
+  <div id="graphModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeGraphModal()">&times;</span>
+      <h2>Renewable Energy Growth Over Time</h2>
+      <canvas id="lineGraph"></canvas>
+    </div>
+  </div>
+  
+
+
+  
+  <!-- JavaScript Logic -->
+  <script>
+    // INITIAL STATS
+    let airQuality = 50; // AQI scale (lower is better)
+    let co2Reduction = 10; // percentage
+    let renewableEnergy = 20; // percentage
+
+    // Chart.js INIT
+    const ctx = document.getElementById('impactChart').getContext('2d');
+    const impactChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['Air Quality', 'CO2 Reduction', 'Renewable Energy'],
+        datasets: [{
+          label: 'Impact Metrics',
+          data: [airQuality, co2Reduction, renewableEnergy],
+          backgroundColor: ['#36A2EB', '#FF6384', '#4CAF50']
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
+
+    // FUNCTION TO UPDATE BAR CHART
+    function updateChart() {
+      impactChart.data.datasets[0].data = [airQuality, co2Reduction, renewableEnergy];
+      impactChart.update();
+    }
+
+    // SCENE CHANGER FUNCTION
+    function changeScene(url, isModel = false) {
+      const frame = document.getElementById('sceneFrame');
+      if (isModel) {
+        frame.setAttribute('allow', 'autoplay; fullscreen; xr-spatial-tracking');
+      } else {
+        frame.setAttribute('allow', 'fullscreen');
+      }
+      frame.src = url;
+      document.getElementById("result-text").innerText = "Scene changed. Apply actions to see future impact!";
+    }
+
+    // SUSTAINABILITY ACTIONS
+    function addSolarPanels() {
+      renewableEnergy += 15;
+      co2Reduction += 10;
+      changeScene('https://skybox.blockadelabs.com/e/150320add33ee577211f43722ac2cfd7');
+      document.getElementById("result-text").innerText = "✅ Solar panels installed! Renewable energy boosted, CO2 reduced. Scene updated!";
+      updateChart();
+    }
+
+    function plantTrees() {
+      airQuality -= 15;
+      co2Reduction += 5;
+      changeScene('https://skybox.blockadelabs.com/e/33a8ae6da119424bd16cc1533ff6a4a2');
+      document.getElementById("result-text").innerText = "✅ Trees planted! Air quality improved. Scene updated!";
+      updateChart();
+    }
+
+    function optimizeWaste() {
+      co2Reduction += 7;
+      changeScene('https://skybox.blockadelabs.com/e/06d4dc954f2978a83a7a494c9d50e316');
+      document.getElementById("result-text").innerText = "✅ Waste management optimized! Recycling rates up, landfill waste down. Scene updated!";
+      updateChart();
+    }
+
+    function addturbine() {
+      airQuality -= 5;
+      co2Reduction += 17;
+      renewableEnergy += 20;
+      changeScene('https://skybox.blockadelabs.com/e/ecc244687a56fd4e1f2c0d2c36f77323');
+      document.getElementById("result-text").innerText = "🍃 Wind turbine installed! Clean energy on the rise!";
+      updateChart();
+    }
+
+    function simulateFuture() {
+      airQuality -= 10;
+      co2Reduction += 20;
+      renewableEnergy += 20;
+      changeScene('https://skybox.blockadelabs.com/e/e033f56ac8a89f9697362ce2a3a49d33');
+      document.getElementById("result-text").innerText = "🔮 Future simulation complete! Sustainable city achieved.";
+      updateChart();
+    }
+
+    // SHOW LINE GRAPH MODAL (Wind, Solar, Hydropower)
+    function showLineGraph() {
+      const modal = document.getElementById('graphModal');
+      modal.style.display = 'block';
+
+      const ctxLine = document.getElementById('lineGraph').getContext('2d');
+
+      if (window.lineGraphInstance) {
+        window.lineGraphInstance.destroy();
+      }
+
+      window.lineGraphInstance = new Chart(ctxLine, {
+        type: 'line',
+        data: {
+          labels: ['2025', '2030', '2035', '2040', '2045'],
+          datasets: [
+            {
+              label: 'Wind Energy (MW)',
+              data: [50, 100, 180, 250, 320],
+              borderColor: '#36A2EB',
+              fill: false,
+              tension: 0.3
+            },
+            {
+              label: 'Solar Energy (MW)',
+              data: [40, 90, 160, 230, 310],
+              borderColor: '#FFCE56',
+              fill: false,
+              tension: 0.3
+            },
+            {
+              label: 'Hydropower (MW)',
+              data: [60, 80, 100, 120, 140],
+              borderColor: '#4CAF50',
+              fill: false,
+              tension: 0.3
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                color: 'white'
+              }
+            },
+            title: {
+              display: true,
+              text: 'Renewable Energy Growth (MW)',
+              color: 'white',
+              font: {
+                size: 20
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: { color: 'white' }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: { color: 'white' }
+            }
+          }
+        }
+      });
+    }
+
+    // CLOSE MODAL FUNCTION
+    function closeGraphModal() {
+      document.getElementById('graphModal').style.display = 'none';
+    }
+    // COUNTERS FOR INSTALLATIONS
+let solarPanelsInstalled = 0;
+let windTurbinesInstalled = 0;
+let smartBinsInstalled = 0;
+
+// REQUIREMENTS
+const requiredSolarPanels = 10;
+const requiredWindTurbines = 5;
+const requiredSmartBins = 15;
+
+// Modify existing functions to increment counts
+function addSolarPanels() {
+  solarPanelsInstalled++;
+  renewableEnergy += 15;
+  co2Reduction += 10;
+  changeScene('https://skybox.blockadelabs.com/e/150320add33ee577211f43722ac2cfd7');
+  document.getElementById("result-text").innerText = "✅ Solar panels installed! Renewable energy boosted, CO2 reduced. Scene updated!";
+  updateChart();
+}
+
+function addturbine() {
+  windTurbinesInstalled++;
+  airQuality -= 5;
+  co2Reduction += 17;
+  renewableEnergy += 20;
+  changeScene('https://skybox.blockadelabs.com/e/ecc244687a56fd4e1f2c0d2c36f77323');
+  document.getElementById("result-text").innerText = "🍃 Wind turbine installed! Clean energy on the rise!";
+  updateChart();
+}
+
+function optimizeWaste() {
+  smartBinsInstalled++;
+  co2Reduction += 7;
+  changeScene('https://skybox.blockadelabs.com/e/06d4dc954f2978a83a7a494c9d50e316');
+  document.getElementById("result-text").innerText = "✅ Waste management optimized! Recycling rates up, landfill waste down. Scene updated!";
+  updateChart();
+}
+
+// SHOW INSTALLATIONS STATUS GRAPH
+function showInstallationsStatus() {
+  const modal = document.getElementById('statusModal');
+  modal.style.display = 'block';
+
+  const ctxInstall = document.getElementById('installationsGraph').getContext('2d');
+
+  if (window.installGraphInstance) {
+    window.installGraphInstance.destroy();
+  }
+
+  window.installGraphInstance = new Chart(ctxInstall, {
+    type: 'bar',
+    data: {
+      labels: ['Wind Turbines', 'Solar Panels', 'Smart Bins'],
+      datasets: [
+        {
+          label: 'Installed',
+          data: [windTurbinesInstalled, solarPanelsInstalled, smartBinsInstalled],
+          backgroundColor: '#4CAF50'
+        },
+        {
+          label: 'Required',
+          data: [requiredWindTurbines, requiredSolarPanels, requiredSmartBins],
+          backgroundColor: '#FF6384'
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            color: 'white'
+          }
+        },
+        title: {
+          display: true,
+          text: 'Installations: Installed vs Required',
+          color: 'white',
+          font: {
+            size: 20
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: 'white' }
+        },
+        y: {
+          beginAtZero: true,
+          ticks: { color: 'white' }
+        }
+      }
+    }
+  });
+}
+
+// CLOSE STATUS MODAL
+function closeStatusModal() {
+  document.getElementById('statusModal').style.display = 'none';
+}
+
+  </script>
+    <!-- Add this button inside the side-buttons div -->
+<div class="side-buttons">
+ 
+  <a href="blueprint.html">
+    <button>Show Blueprint</button>
+  </a>
+  <!-- NEW BUTTON FOR INSTALLATIONS STATUS -->
+  <button onclick="showInstallationsStatus()">Show Installations Status</button>
+</div>
+
+</body>
+</html>
+
+
+
+
+
+          

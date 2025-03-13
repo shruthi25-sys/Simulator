@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Smart City Coimbatore Map</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <!-- Marker Cluster CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
+
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f9f9f9;
+      color: #333;
+    }
+
+    header {
+      background-color: #4CAF50;
+      color: white;
+      text-align: center;
+      padding: 15px;
+    }
+
+    #map {
+      height: 90vh;
+      width: 100%;
+    }
+
+    .components {
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 0 15px rgba(0,0,0,0.3);
+      border-radius: 5px;
+      font-size: 14px;
+      color: #333;
+    }
+
+    .components img {
+      vertical-align: middle;
+      width: 20px;
+      margin-right: 5px;
+    }
+
+    .leaflet-control-layers-expanded {
+      background: rgba(255, 255, 255, 0.9);
+      color: #333;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🌿 Smart City Coimbatore 🌿</h1>
+  <p>Real-time Renewable Energy & Smart Waste Management</p>
+</header>
+
+<div id="map"></div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<!-- MarkerCluster JS -->
+<script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+
+<script>
+  // Initialize the map with a clean white tile layer
+  var map = L.map('map').setView([10.906, 77.001], 10);
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap contributors & CartoDB'
+  }).addTo(map);
+
+  // Custom icons
+  const solarIcon = L.icon({
+    iconUrl: 'https://cdn-icons-png.flaticon.com/512/3222/3222695.png',
+    iconSize: [30, 30]
+  });
+
+  const windIcon = L.icon({
+    iconUrl: 'https://cdn-icons-png.flaticon.com/512/1112/1112557.png',
+    iconSize: [30, 30]
+  });
+
+  const binIcon = L.icon({
+    iconUrl: 'https://cdn-icons-png.flaticon.com/512/854/854894.png',
+    iconSize: [30, 30]
+  });
+
+  // Solar Data
+  const solarSites = [
+    { name: "Solar Plant - Gandhipuram", lat: 11.0180, lng: 76.9500, capacity: "20 kW", status: "Operational" },
+    { name: "Solar Rooftop - Peelamedu", lat: 11.0220, lng: 76.9850, capacity: "30 kW", status: "Operational" },
+    { name: "Solar Farm - RS Puram", lat: 11.0125, lng: 76.9600, capacity: "50 kW", status: "Under Maintenance" },
+    { name: "Solar Park - Saibaba Colony", lat: 11.0380, lng: 76.9550, capacity: "40 kW", status: "Operational" }
+  ];
+
+  // Wind Turbine Data
+  const windSites = [
+    { name: "Wind Farm - Anaimalai", lat: 10.5833, lng: 76.9333, capacity: "2 MW", status: "Operational" },
+    { name: "Wind Farm - Udumalpet", lat: 10.5881, lng: 77.2472, capacity: "3 MW", status: "Operational" },
+    { name: "Wind Turbine - Singanallur", lat: 11.0250, lng: 76.9400, capacity: "1 MW", status: "Maintenance" },
+    { name: "Wind Turbine - Ukkadam", lat: 11.0200, lng: 76.9700, capacity: "500 kW", status: "Operational" }
+  ];
+
+  // Smart Bin Data
+  const binSites = [
+    { name: "Smart Bin - Gandhipuram", lat: 11.0150, lng: 76.9550, fillLevel: "60%", status: "Normal" },
+    { name: "Smart Bin - RS Puram", lat: 11.0100, lng: 76.9450, fillLevel: "80%", status: "Needs Collection" },
+    { name: "Smart Bin - Peelamedu", lat: 11.0220, lng: 76.9650, fillLevel: "50%", status: "Normal" },
+    { name: "Smart Bin - Anaimalai Town", lat: 10.5830, lng: 76.9400, fillLevel: "90%", status: "Urgent" }
+  ];
+
+  // Create Layer Groups
+  const solarLayer = L.markerClusterGroup();
+  const windLayer = L.markerClusterGroup();
+  const binLayer = L.markerClusterGroup();
+
+  // Add Solar Markers
+  solarSites.forEach(site => {
+    const marker = L.marker([site.lat, site.lng], { icon: solarIcon })
+      .bindPopup(`<b>${site.name}</b><br>Capacity: ${site.capacity}<br>Status: ${site.status}`);
+    solarLayer.addLayer(marker);
+  });
+
+  // Add Wind Turbine Markers
+  windSites.forEach(site => {
+    const marker = L.marker([site.lat, site.lng], { icon: windIcon })
+      .bindPopup(`<b>${site.name}</b><br>Capacity: ${site.capacity}<br>Status: ${site.status}`);
+    windLayer.addLayer(marker);
+  });
+
+  // Add Smart Bin Markers
+  binSites.forEach(site => {
+    const marker = L.marker([site.lat, site.lng], { icon: binIcon })
+      .bindPopup(`<b>${site.name}</b><br>Fill Level: ${site.fillLevel}<br>Status: ${site.status}`);
+    binLayer.addLayer(marker);
+  });
+
+  // Add all layers to map by default
+  solarLayer.addTo(map);
+  windLayer.addTo(map);
+  binLayer.addTo(map);
+
+  // Layer Controls
+  const overlayMaps = {
+    "Solar Panels ☀️": solarLayer,
+    "Wind Turbines 🌬️": windLayer,
+    "Smart Bins 🗑️": binLayer
+  };
+
+  L.control.layers(null, overlayMaps, { collapsed: false }).addTo(map);
+
+  // components
+  const components = L.control({ position: "bottomright" });
+
+  components.onAdd = function (map) {
+    const div = L.DomUtil.create("div", "components");
+    div.innerHTML += "<h4>components</h4>";
+    div.innerHTML += '<p><img src="https://cdn-icons-png.flaticon.com/512/3222/3222695.png"> Solar Panel</p>';
+    div.innerHTML += '<p><img src="https://cdn-icons-png.flaticon.com/512/1112/1112557.png"> Wind Turbine</p>';
+    div.innerHTML += '<p><img src="https://cdn-icons-png.flaticon.com/512/854/854894.png"> Smart Dustbin</p>';
+    return div;
+  };
+
+  components.addTo(map);
+
+</script>
+
+</body>
+</html>
+   
